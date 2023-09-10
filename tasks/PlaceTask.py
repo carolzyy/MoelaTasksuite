@@ -48,6 +48,7 @@ class PlaceTask( RLTask):
 
 
         self.table_position = Gf.Vec3d(1.5, 1.5, 0.0)
+        self.robot_name = name
 
         RLTask.__init__(self, name, env)
 
@@ -55,7 +56,7 @@ class PlaceTask( RLTask):
 
     def set_up_scene(self, scene) -> None:
         self._stage = get_current_stage()
-        get_robot('franka_rod',self.default_zero_env_path + "/Robot",
+        get_robot(self.robot_name,self.default_zero_env_path + "/Robot",
                   self.robot_position)#add reference
         get_table(table_position = self.table_position,
                   prim = self.default_zero_env_path+ "/Table")

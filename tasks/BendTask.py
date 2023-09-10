@@ -54,6 +54,9 @@ class BendTask( RLTask):
         self.target_position = np.array([2.9, -2.1, 0.2])
         self.corner_position = np.array([2.9, 0, 0.2])
 
+
+
+
         RLTask.__init__(self, name, env)
         return
 #TDL: get ee position and set to rod

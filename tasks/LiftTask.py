@@ -1,298 +1,231 @@
-from abc import abstractmethod, ABC
-from typing import Optional
+from pxr import  Gf, PhysxSchema,UsdGeom
+from omni.isaac.core.prims import RigidPrimView, XFormPrimView,GeometryPrimView,XFormPrim
+from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage
+from omni.isaac.core.utils.torch.transformations import *
+from omni.isaac.core.utils.torch.rotations import *
+from omniisaacgymenvs.tasks.base.rl_task import RLTask
 
-from omni.isaac.kit import SimulationApp
-
-#simulation_app = SimulationApp({"headless": False})
-
-from omni.isaac.gym.vec_env import VecEnvBase
-env = VecEnvBase(headless=False)
-
-import carb
-import omni
-import omni.usd as usd
-import gym
-from omni.isaac.core.tasks import BaseTask
-from omni.isaac.manipulators import SingleManipulator
-#from omni.isaac.manipulators.grippers import SingleGripper
-from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage,open_stage
-import omni.physx as _physx
-from omni.physx import get_physx_scene_query_interface,get_physx_interface, get_physx_simulation_interface
-from omni.isaac.core import World
-from omni.isaac.core.scenes.scene import Scene
-from pxr import UsdGeom, UsdLux, Sdf, Gf, Vt, Usd, UsdPhysics,PhysxSchema,PhysicsSchemaTools
-from omni.isaac.core.utils.viewports import set_camera_view
-from omni.isaac.motion_generation.lula import RmpFlow
-from omni.isaac.motion_generation import ArticulationMotionPolicy
-from omni.isaac.core.objects import cuboid, DynamicCuboid, VisualCuboid
-from omni.isaac.core.prims import GeometryPrim, XFormPrim
-from omni.isaac.core.utils.types import ArticulationAction
 import numpy as np
 import torch
-from omni.physx.scripts import physicsUtils, deformableUtils
-from gym import spaces
+from omni.isaac.core.objects import cuboid, DynamicCuboid, VisualCuboid
+from omniisaacgymenvs.utils.hydra_cfg.hydra_utils import *
+from Utils.TaskUtils import get_robot,get_door,get_world_point
+from Utils.FrankaView import FrankaView
 
-from omniisaacgymenvs.tasks.base.rl_task import RLTask
-from Utils.LegSpot import LegSpot
-from Utils.RidgeFranka import RidgeFranka
+
 class LiftTask( RLTask):
     def __init__(
             self,
             name,
-            #env_num=1,
-            #repeat_act=3,
             sim_config,
             env,
             offset=None
     )-> None:
 
-        _physx.get_physx_interface().overwrite_gpu_setting(1)
-        self._device = torch.cuda.get_device_name()
-        print('cude device is:', self._device)
-        # task specific
-        self._robot = None
-        self._stage = None
-        self._cube_prim = None
-        self.repeat_act = repeat_act
+        self._sim_config = sim_config
+        self._cfg = sim_config.config
+        self._task_cfg = sim_config.task_config
+
+        self._num_envs = self._task_cfg["env"]["numEnvs"]
+        self._env_spacing = self._task_cfg["env"]["envSpacing"]
+        self._dt = self._task_cfg["sim"]["dt"]
+
+        self._max_episode_length = self._task_cfg["env"]["episodeLength"]
+        self.robot_name = 'franka_lift'
 
         #RL params
-        self._num_observations = 32
+        self._num_observations = 51
         self._num_actions = 10
-        self.num_envs = env_num
-        self._deform_api = None
 
         self.robot_position = Gf.Vec3d(0, 0, 0.0)
-        self.rod_ee = torch.tensor([[0, 0, 0.0]])
 
-        self.rod_tar = np.array([1.75, 0.5, 0.8])
-        self.robot_tar = np.array([0, 1, 0.0])
+        self.belt_tar = np.array([1.5, -0.3, 0.8])
+        self.robot_tar = np.array([0.5, -0.75, 0.1])
 
-        self.obs = np.zeros((self.num_envs, self._num_observations))
-        self.resets = torch.zeros((self.num_envs, 1))
-        self.reward = torch.ones((self.num_envs, 1))
 
-        # set the action and observation space for RL
-        self.action_space = spaces.Box(np.ones(self._num_actions) * -1,
-                                       np.ones(self._num_actions) * 1
-                                       )
-
-        self.observation_space = spaces.Box(np.ones(self._num_observations) * -np.Inf,
-                                            np.ones(self._num_observations) * np.Inf)
-
-        RLTask.__init__(self, name=name, env)
+        RLTask.__init__(self, name, env)
 
         return
 
-    def set_up_scene(self, scene: Scene) -> None:
-        super().set_up_scene(scene)
+    def set_up_scene(self, scene) -> None:
         self._stage = get_current_stage()
-        scene.add_default_ground_plane()
+        get_robot(self.robot_name, self.default_zero_env_path + "/Robot",
+                  self.robot_position)  # add reference
+        self.add_target()
+        replicate_physics = False
+        super().set_up_scene(scene, replicate_physics)
 
-        self.robot = scene.add(RidgeFranka(position=self.robot_position))
-        self._rod_mesh = self.set_rod()
+        self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot",
+                                 #name='franka_view'
+                                 )
+        scene.add(self._robot)
 
-        self.set_initial_camera_params(camera_position=[6,0,1])
+        self._robot_target = XFormPrimView(prim_paths_expr="/World/envs/.*/Belt_Target",
+                                           name="target_robot_view",
+                                           reset_xform_properties=False
+                                           )
+        scene.add(self._robot_target)
+
+        self._belt_target = XFormPrimView(prim_paths_expr="/World/envs/.*/Robot_Target",
+                                          name="target_belt_view",
+                                          reset_xform_properties=False
+                                          )
+        scene.add(self._belt_target)
+        self.set_initial_camera_params(camera_position=[9.7,-8.1,2.3])
 
         return
 
-    def set_initial_camera_params(self, camera_position=[1.5, 1.5, 1.5], camera_target=[0, 0, 0]):# defaul params
-        set_camera_view(eye=camera_position, target=camera_target, camera_prim_path="/OmniverseKit_Persp")
+    def add_target(self):
+        target = VisualCuboid(prim_path=self.default_zero_env_path + "/Belt_Target",
+                                     position=self.belt_tar,
+                                     color=np.array([0., 1.0, 0]),
+                                     size=0.1)
 
-
-    def set_rod(self,left_position = Gf.Vec3f(2.0, -0.6, 0.8), right_position=Gf.Vec3f(2.0, 0.6, 0.8)):
-        env_path = '/World/env/'
-        deform_mater_path = '/World/Physics_Materials/deform_material'
-
-        rod_mesh = physicsUtils.create_mesh_cube(self._stage, env_path + 'rod', 0.05, 1.2)
-        rod_mesh.AddTranslateOp().Set(Gf.Vec3f(2, -0.6, 0.6))
-        rod_mesh.AddRotateZOp().Set(90)
-
-        cuboid.VisualCuboid("/World/env/rod_target", position=np.array([2, 0, 0.8]), color=np.array([0, 0, 1.0]),size=0.1)
-        cuboid.VisualCuboid("/World/env/robot_target", position=np.array([4, 0, 0.1]), color=np.array([0., 1.0, 0]), size=0.2)
-
-
-        cube_left_prim = physicsUtils.add_rigid_box(self._stage,
-                                                    env_path + 'cube_left',
-                                                    size=Gf.Vec3f(3, 0.1, 1.6),
-                                                    position=left_position,
-                                                    density=0.0)
-
-        cube_right_prim = physicsUtils.add_rigid_box(self._stage,
-                                                     env_path + 'cube_right',
-                                                     size=Gf.Vec3f(3, 0.1, 1.6),
-                                                     position=right_position,
-                                                     density=0.0)
-
-
-        deformableUtils.add_physx_deformable_body(self._stage,
-                                                               rod_mesh.GetPath(),
-                                                               collision_simplification=True,
-                                                               simulation_hexahedral_resolution=5,
-                                                               self_collision=False,)
-
-
-        deformableUtils.add_deformable_body_material(self._stage,
-                                                     deform_mater_path,
-                                                     youngs_modulus=3.0e12,
-                                                     )
-
-        physicsUtils.add_physics_material_to_prim(self._stage, rod_mesh.GetPrim(), deform_mater_path)
-
-        # set robot attachment, target 1 is rod, target 2 is arm_ee
-        attachment_cube_right_path = rod_mesh.GetPath().AppendElementString('attach_cube_right')
-        attachment_cube_right = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_cube_right_path)
-        attachment_cube_right.GetActor0Rel().SetTargets([rod_mesh.GetPath()])
-        attachment_cube_right.GetActor1Rel().SetTargets([cube_right_prim.GetPath()])
-        attach_api_cube_right = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_cube_right.GetPrim())
-        attach_api_cube_right.CreateEnableRigidSurfaceAttachmentsAttr(True)
-
-        # set cube attachment, target 1 is rod, target 2 is arm_ee
-        attachment_cube_left_path = rod_mesh.GetPath().AppendElementString('attach_cube_left')
-        attachment_cube_left = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_cube_left_path)
-        attachment_cube_left.GetActor0Rel().SetTargets([rod_mesh.GetPath()])
-        attachment_cube_left.GetActor1Rel().SetTargets([cube_left_prim.GetPath()])
-        attach_api_cube_left = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_cube_left.GetPrim())
-        attach_api_cube_left.CreateEnableRigidSurfaceAttachmentsAttr(True)
-
-        return rod_mesh
-
+        target = cuboid.VisualCuboid(prim_path=self.default_zero_env_path + "/Robot_Target",
+                                     position=self.robot_tar,
+                                     color=np.array([1., 0, 0]),
+                                     size=0.2)
 
     #In this method, we can implement logic that gets executed once the scene is constructed and simulation starts running.
     def post_reset(self) -> None:
         #randomize all envs, maybe train several env one time
-        indices = torch.arange(self.num_envs)
-        self.reset(indices)
+        if self.robot_name == 'franka_lift':
+            self.robot_default_dof = torch.tensor(
+                [0.0, 0.0, 0.0,
+                 1.157, -1.066, -0.155, -2.239, -1.841, 1.003, 0.469,
+                 ], device=self._device
+            )
+
+        dof_limits = self._robot.get_dof_limits()
+        self.robot_dof_lower_limits = dof_limits[0, :, 0].to(device=self._device)  # dof limitation list,(10,)
+        self.robot_dof_upper_limits = dof_limits[0, :, 1].to(device=self._device)
+        self.robot_dof_speed_scales = torch.ones_like(self.robot_dof_upper_limits) * 2
+        self.robot_dof_speed_scales[:2] = 1
+
+        self.robot_dof_targets = torch.zeros(
+            (self._num_envs, self._robot.num_dof), dtype=torch.float, device=self._device
+        )
+        self.robot_dof_pos = torch.zeros(
+            (self.num_envs, self._robot.num_dof), device=self._device)
+
+        self.actions = torch.zeros((self._num_envs, self.num_actions), device=self._device)
+
+        indices = torch.arange(self._num_envs, dtype=torch.int64, device=self._device)
+        self.reset_idx(indices)
 
     # reset the environment and set a random joint action,set our environment into an initial state for starting a new training episode.
     # should be random initial pose, however all zero now
-    def reset(self,env_ids=None):
-        if env_ids is None:
-            env_ids = torch.arange(self.num_envs)
-        num_resets = len(env_ids)
-        self.robot.initialize()
+    def reset_idx(self, env_ids):
+        indices = env_ids.to(dtype=torch.int32)
+        num_indices = len(indices)
 
-        self.resets[env_ids] = 0
+        pos = tensor_clamp(
+            self.robot_default_dof.unsqueeze(0),
+            # + 0.25 * (torch.rand((len(env_ids), self._robot.num_dof), device=self._device) - 0.5),
+            self.robot_dof_lower_limits,
+            self.robot_dof_upper_limits,
+        )
+        dof_pos = torch.zeros((num_indices, self._robot.num_dof), device=self._device)
+        dof_vel = torch.zeros((num_indices, self._robot.num_dof), device=self._device)
+        dof_pos[:, :] = pos
+        self.robot_dof_targets[env_ids, :] = pos
+        self.robot_dof_pos[env_ids, :] = pos
+
+        self._robot.set_joint_positions(dof_pos, indices=indices)  # set to default
+        self._robot.set_joint_velocities(dof_vel, indices=indices)  # set to zero
+        self._robot.set_joint_position_targets(self.robot_dof_targets[env_ids], indices=indices)
+
+        self.reset_buf[env_ids] = 0
+        self.progress_buf[env_ids] = 0
 
 
 
     # deal with action and also
     #This method will be called from VecEnvBase before each simulation step
     def pre_physics_step(self, actions)-> None:
-        reset_env_ids = self.resets.nonzero().squeeze(-1)
-        if len(reset_env_ids) > 0:
-            self.reset(reset_env_ids)
+        if not self._env._world.is_playing():
+            return
 
-        self.robot.apply_dofaction(actions, self.repeat_act)
+        reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
+        if len(reset_env_ids) > 0:
+            self.reset_idx(reset_env_ids)
+
+        self.actions = actions.clone().to(self._device)
+        # targets = self.robot_dof_targets + self.robot_dof_speed_scales * self._dt * self.actions * self.action_scale#### maybe need to change
+        # targets = self.robot_dof_speed_scales * self.actions
+        targets = self.robot_dof_targets + self.robot_dof_speed_scales * self._dt * self.actions
+        self.robot_dof_targets[:] = tensor_clamp(targets, self.robot_dof_lower_limits, self.robot_dof_upper_limits)
+
+        env_ids_int32 = torch.arange(self._robot.count, dtype=torch.int32, device=self._device)
+        self._robot.set_joint_position_targets(self.robot_dof_targets, indices=env_ids_int32)
 
     # collect observation info
     def get_observations(self):
         # related element node position, 44 points
-        #rod_elem_pos = self._deform_api.GetSimulationPointsAttr().Get()
-        # rod_elem_pos1 = self._deform_api.GetCollisionPointsAttr().Get()
-
-        rod_pos = usd.utils.get_world_transform_matrix(self._rod_mesh.GetPrim())
-        rod_tran = Gf.Vec3f(rod_pos.ExtractTranslation())
-        self.rod_position = np.array(rod_tran)
 
 
-        self.robot.update()
+        self.belt_target, _ = self._belt_target.get_world_poses()
+        self.robot_target, _ = self._robot_target.get_world_poses()
 
-        self.obs = np.concatenate(
-            (self.rod_position.reshape(self.num_envs, -1),
-             self.rod_tar.reshape(self.num_envs, -1),
-             self.robot_tar.reshape(self.num_envs, -1),
-             #self.robot._state.baseframe_pos.reshape(self.num_envs, -1),
-             self.robot._state.joint_pos[:self._num_actions].reshape(self.num_envs, -1),
-             self.robot._state.joint_vel[:self._num_actions].reshape(self.num_envs, -1)),
+        robot_position, robot_rot = self._robot._base.get_world_poses()
+        belt_position, _ = self._robot._def.get_world_poses()
+
+        robot_dof_pos = self._robot.get_joint_positions(clone=False)
+        robot_dof_poses = robot_dof_pos.reshape(self._num_envs, -1).to(dtype=torch.float)
+
+        robot_dof_vel = self._robot.get_joint_velocities(clone=False)
+        robot_dof_vels = robot_dof_vel.reshape(self._num_envs, -1).to(dtype=torch.float)
+
+        belt_ele_pos = []
+        for prim in self._robot._def.prims:
+            ele, _ = get_world_point(prim)  # ele,24 pionts
+            belt_ele_pos.append(ele[::4])
+        belt_ele_pos = np.array(belt_ele_pos).reshape(self._num_envs, -1)
+        ele_pos = torch.tensor(belt_ele_pos, dtype=torch.float)  # num*72
+
+        self.obs_buf = torch.cat(
+            (
+                ele_pos,
+                robot_position,
+                robot_rot,
+                self.belt_target,
+                self.robot_target,
+                robot_dof_poses,
+                robot_dof_vels,
+            ),
             axis=-1)
+
         #####must return the obs or there would be error
-        return self.obs
+        observations = {
+            'PlaceTask': {
+                "obs_buf": self.obs_buf
+            }
+        }
+        return observations
 
     def calculate_metrics(self) -> None:
-        rod_pos = torch.tensor(self.rod_position)
-        rod_target = torch.tensor(self.rod_tar)
-        rod_dis = torch.sqrt(torch.sum((rod_pos - rod_target) ** 2, dim=-1, keepdim=True)).unsqueeze(-1)
+        robot_target = self.robot_target
+        belt_target = self.belt_target
 
-        robot_pos = torch.tensor(self.robot._state.baseframe_pos)
-        robot_target = torch.tensor(self.robot_tar)
-        robot_dis = torch.sqrt(torch.sum((robot_pos - robot_target) ** 2, dim=-1, keepdim=True)).unsqueeze(-1)
+        belt_position, _ = self._robot._def.get_world_poses()
+        belt_dis = torch.sqrt(torch.sum((belt_position - belt_target) ** 2, dim=-1))
 
+        robot_position, _ = self._robot._base.get_world_poses()
+        robot_dis = torch.sqrt(torch.sum((robot_position - robot_target) ** 2, dim=-1))
 
-        self.reward = torch.where(0.3> rod_dis, 300, -rod_dis)
-        self.reward = torch.where(0.2> robot_dis, self.reward +300, self.reward-robot_dis)
+        dis  = robot_dis + belt_dis
+        rewards = -dis
+        self.flag = (0.4 > dis)
+        if self.flag.any():
+            print('done')
+        rewards = torch.where(self.flag, rewards + 20, rewards)
 
-
-        return self.reward.item()
+        self.rew_buf[:] = rewards
 
     # know if it finish or not
     def is_done(self) -> bool:
-        resets = torch.where(self.reward > 0, 1, 0)
-        self.resets = resets
-
-        return resets.item()
-
-'''
-
-def main():
-    rod_task = RidgeSpot_Lift()
-    world = World(stage_units_in_meters=1.0)
-    world.add_task(rod_task)
-    world.reset()
-
-
-
-
-#getBypassRenderSkelMeshProcessing
-    while simulation_app.is_running():
-        world.step(render=True)
-        #i = i+1
-        if world.is_playing():
-            if world.current_time_step_index == 0:
-                world.reset()
-
-
-    simulation_app.close()
-
-
-if __name__ == "__main__":
-    main()
-
-
-
-'''
-from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import CheckpointCallback
-
-task = RidgeSpot_Lift()
-
-env.set_task(task,
-             backend="torch",
-             init_sim=True,
-             physics_dt=1.0 / 60.0,
-             rendering_dt=1.0 / 60.0,
-             )
-log_dir = "./FrankaLift"
-
-
-#checkpoint_callback = CheckpointCallback(save_freq=100000, save_path=log_dir, name_prefix="Ridgefranka_ppo_checkpoint")
-# create agent from stable baselines
-model = PPO(
-        "MlpPolicy",
-        env,
-        n_steps=4096,
-        batch_size=128,
-        n_epochs=20,
-        learning_rate=0.0005,
-        gamma=0.9,
-        device="cuda:0",
-        ent_coef=0.0,
-        vf_coef=0.5,
-        max_grad_norm=1.0,
-        verbose=1,
-        tensorboard_log=log_dir
-)
-model.learn(total_timesteps=40000)
-model.save(log_dir+"/ppo_franka0")
-print('learning finish')
-
-env.close()
+        resets = torch.where(self.progress_buf >= self._max_episode_length - 1, torch.ones_like(self.reset_buf),
+                             self.reset_buf)
+        resets = torch.where(self.flag, torch.ones_like(self.reset_buf), resets)
+        # or reward >12
+        self.reset_buf[:] = resets

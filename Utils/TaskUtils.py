@@ -12,13 +12,19 @@ root_path=os.getcwd()
 def get_robot(robot_name,path,robot_position,max_velocity=None):
     #robot_name = 'franka'
     if robot_name == 'franka_rod':
-        robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/RidgebackFranka/ridgeback_franka_rod.usd',max_velocity=max_velocity)
+        robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/RidgebackFranka/ridgeback_franka_rod.usd')
+    elif robot_name == 'franka':
+        robot = RidgeFranka(path, position=robot_position,
+                            usd_path=root_path + '/Asset/ridgeback_franka.usd')
         # self._sim_config.apply_articulation_settings, from omniversegym
     elif robot_name == 'franka_long':
         max_velocity = [4000, 4000] + [math.degrees(x)/3 for x in [2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61]]
         robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/RidgebackFranka/ridgeback_franka_rod_long.usd',max_velocity=max_velocity)
+    elif robot_name == 'franka_lift':
+        robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/ridgebach_franka_lift.usd')
     elif robot_name == 'spot':
-        robot = LegSpot(path + "/robot", position=robot_position)
+        robot = LegSpot(path , position=robot_position)
+
 
 def get_table(table_position,prim):
     table_usd_path = root_path+'/Asset/Table.usd'
@@ -54,7 +60,16 @@ def get_obstacle(ob_position,prim):
         scale=Gf.Vec3d(0.9, 0.9, 1.5)
     )
 
+def get_door(position,prim):
+    usd_path = root_path + '/Asset/Door.usd'
+    add_reference_to_stage(usd_path=usd_path, prim_path=prim)
 
+    door = XFormPrim(
+        prim_path=prim,
+        name="door",
+        translation=position,
+        #scale=[0.1],  # maybe need trible
+    )
 #path =self.default_zero_env_path + "/Rod"
 def get_rod(path, position=Gf.Vec3f(0.95, 0, 0.8)):
     rod_usd = root_path + '/Asset/Rod.usd'
@@ -76,12 +91,16 @@ def initialize_task(config, env, init_sim=True):
     from tasks.PlaceTask import PlaceTask
     from tasks.BendTask import BendTask
     from tasks.TransportTask import TransportTask
+    from tasks.PullTask import PullTask
+    from tasks.LiftTask import LiftTask
     from omniisaacgymenvs.tasks.cartpole import CartpoleTask
 
     # Mappings from strings to environments
     task_map = {
         "Place": PlaceTask,
         "Bend": BendTask,
+        "Pull": PullTask,
+        "Lift": LiftTask,
         "Transport": TransportTask,
         "Cartpole": CartpoleTask,
     }

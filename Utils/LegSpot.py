@@ -83,7 +83,7 @@ class LegSpot(Robot):
 
 
         super().__init__(
-            prim_path="/World/env/spot", name=name, position=position, orientation=orientation, articulation_controller=None
+            prim_path=prim_path, name=name, position=position, orientation=orientation, articulation_controller=None
         )
 
         self.dof_limit = None

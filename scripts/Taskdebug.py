@@ -21,6 +21,8 @@ from omniisaacgymenvs.utils.hydra_cfg.reformat import omegaconf_to_dict, print_d
 from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig
 from tasks.BendTask import BendTask
 from tasks.PlaceTask import PlaceTask
+from tasks.PullTask import PullTask
+from tasks.LiftTask import LiftTask
 from tasks.TransportTask import TransportTask
 
 
@@ -47,7 +49,7 @@ def main(cfg: DictConfig):
     #env = VecEnvRLGames(headless=headless, sim_device=cfg.device_id,
     #                    )
     sim_config = SimConfig(cfg_dict)
-    task = TransportTask(name='bend',sim_config=sim_config,env=env)
+    task = LiftTask(name='spot',sim_config=sim_config,env=env)
 
     env.set_task(task=task, sim_params=sim_config.get_physics_params(), backend="torch", init_sim=True)
 

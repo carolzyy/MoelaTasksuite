@@ -42,7 +42,7 @@ class RidgeFranka(Robot):
 
         if self._usd_path is None:
             root_path = os.getcwd()
-            self._usd_path = root_path + '/Asset/RidgebackFranka/ridgeback_franka.usd'
+            self._usd_path = root_path + '/Asset/ridgeback_franka.usd'
 
         carb.log_warn("asset path is: " + self._usd_path)
         add_reference_to_stage(self._usd_path, prim_path)
