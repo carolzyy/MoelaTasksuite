@@ -14,7 +14,7 @@ env:
   clipActions: 1.0
   controlFrequencyInv: 1 #render times every action
 
-  #actionScale: 10 #7.5
+  reduce: False #7.5
   #dofVelocityScale: 0.1
   #distRewardScale: 2.0
   #rotRewardScale: 0.5
