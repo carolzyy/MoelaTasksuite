@@ -216,9 +216,9 @@ class BendTask( RLTask):
         self.ee_pos = ee_pos
 
         if self.reduce:
-            ele_pos = torch.tensor(rod_ele_pos,dtype=torch.float)
-        else:
             ele_pos = ee_pos
+        else:
+            ele_pos = torch.tensor(rod_ele_pos,dtype=torch.float)
 
         self.obs_buf = torch.cat(
             (
