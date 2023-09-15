@@ -13,7 +13,7 @@ env:
   clipObservations: 5.0
   clipActions: 1.0
   controlFrequencyInv: 1 #render times every action
-  reduce: False
+  reduce: True
 
 
 sim:

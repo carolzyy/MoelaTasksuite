@@ -32,13 +32,15 @@ class LiftTask( RLTask):
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
         self.robot_name = 'franka_lift'
-        self.reduce = True
+        self.reduce = self.reduce = self._task_cfg["env"]["reduce"]
 
         #RL params
-        self._num_observations = 51
+
         self._num_actions = 10
         if self.reduce == True:
             self._num_observations = 36
+        else:
+            self._num_observations = 51
 
         self.robot_position = Gf.Vec3d(0, 0, 0.0)
 
@@ -179,7 +181,7 @@ class LiftTask( RLTask):
         robot_dof_vel = self._robot.get_joint_velocities(clone=False)
         robot_dof_vels = robot_dof_vel.reshape(self._num_envs, -1).to(dtype=torch.float)
 
-        if self.reduce == True:
+        if self.reduce:
             ele_pos = belt_position
         else:
             belt_ele_pos = []

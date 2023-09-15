@@ -45,16 +45,16 @@ enable_livestream: False
 # timeout for MT script
 mt_timeout: 30
 
-wandb_activate: False
-wandb_group: 'Lif_reduce'
+wandb_activate: True
+wandb_group: 'mul_reduce'
 wandb_name: ${train.params.config.name}_lap
 wandb_entity:
 wandb_project: 'modebench'
 
 # set default task and default training config based on task
 defaults:
-  - task: Place
-  - train: PlaceSAC
+  - task: Transport
+  - train: TransportSAC
   - hydra/job_logging: disabled
 
 # set the directory where the output files get saved

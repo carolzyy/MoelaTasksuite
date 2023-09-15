@@ -37,13 +37,18 @@ class BendTask( RLTask):
         self._num_envs = self._task_cfg["env"]["numEnvs"]
         self._env_spacing = self._task_cfg["env"]["envSpacing"]
         self._dt = self._task_cfg["sim"]["dt"]
+        self.reduce = self._task_cfg["env"]["reduce"]
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
         #self.action_scale = 5
             #self._task_cfg)["env"]["actionScale"]
 
 
-        self._num_observations = 39
+        if self.reduce:
+            self._num_observations = 36
+        else:
+            self._num_observations = 102
+
 
         self._num_actions = 10
 
@@ -201,14 +206,19 @@ class BendTask( RLTask):
         rod_ee_pos = []
         for prim in self._robot._def.prims:
             ele, ee = get_world_point(prim) #ele,24 pionts
-            rod_ele_pos.append(ele[::8])
+            rod_ele_pos.append(ele)
             rod_ee_pos.append(ee)
         rod_ele_pos = np.array(rod_ele_pos).reshape(self._num_envs, -1)
-        ele_pos = torch.tensor(rod_ele_pos, dtype=torch.float)  # num*72
+        #ele_pos = torch.tensor(rod_ele_pos, dtype=torch.float)  # num*72
 
         rod_ee_pos = np.array(rod_ee_pos).reshape(self._num_envs, -1)
         ee_pos = torch.tensor(rod_ee_pos, dtype=torch.float)  # 2*3
         self.ee_pos = ee_pos
+
+        if self.reduce:
+            ele_pos = torch.tensor(rod_ele_pos,dtype=torch.float)
+        else:
+            ele_pos = ee_pos
 
         self.obs_buf = torch.cat(
             (

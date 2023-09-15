@@ -42,13 +42,18 @@ class PlaceTask( RLTask):
 
         self.robot_position = Gf.Vec3d(0,0,0.0)
         self.table_height = 0.83
+        self.reduce = self._task_cfg["env"]["reduce"]
 
-        self._num_observations = 95
+        if self.reduce:
+            self._num_observations = 33
+        else:
+            self._num_observations = 102
+
         self._num_actions = 10   #with the fingers
 
 
         self.table_position = Gf.Vec3d(1.5, 1.5, 0.0)
-        self.robot_name = name
+        self.robot_name = 'franka_rod'
 
         RLTask.__init__(self, name, env)
 
@@ -160,6 +165,8 @@ class PlaceTask( RLTask):
     # need to debug
     def get_observations(self, ):
 
+        robot_position, robot_rot = self._robot._base.get_world_poses()
+
         robot_dof_pos = self._robot.get_joint_positions(clone=False)
         robot_dof_poses =  robot_dof_pos.reshape(self._num_envs, -1).to(dtype=torch.float)
 
@@ -173,16 +180,23 @@ class PlaceTask( RLTask):
             rod_ele_pos.append(ele)
             rod_ee_pos.append(ee)
         rod_ele_pos = np.array(rod_ele_pos).reshape(self._num_envs,-1)
-        ele_pos = torch.tensor(rod_ele_pos,dtype=torch.float)#num*72
+        #ele_pos = torch.tensor(rod_ele_pos,dtype=torch.float)#num*72
 
         rod_ee_pos = np.array(rod_ee_pos).reshape(self._num_envs, -1)
         ee_pos = torch.tensor(rod_ee_pos,dtype=torch.float)#2*3
         self.ee_pos = ee_pos
 
+        if self.reduce:
+            ele_pos = ee_pos
+        else:
+            ele_pos = torch.tensor(rod_ele_pos,dtype=torch.float)
+
 
         self.obs_buf = torch.cat(
                                  (
                                    ele_pos,
+                                   robot_position,
+                                   robot_rot,
                                    self.targets,
                                    robot_dof_poses,
                                    robot_dof_vels,

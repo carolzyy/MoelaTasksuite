@@ -37,11 +37,16 @@ class TransportTask( RLTask):
         self._num_envs = self._task_cfg["env"]["numEnvs"]
         self._env_spacing = self._task_cfg["env"]["envSpacing"]
         self._dt = self._task_cfg["sim"]["dt"]
+        self.reduce = self._task_cfg["env"]["reduce"]
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
 
         #RL params
-        self._num_observations = 39
+        if self.reduce:
+            self._num_observations = 33
+        else:
+            self._num_observations = 39
+
         self._num_actions = 10
 
 
@@ -182,11 +187,16 @@ class TransportTask( RLTask):
             rod_ele_pos.append(ele[::8])
             rod_ee_pos.append(ee)
         rod_ele_pos = np.array(rod_ele_pos).reshape(self._num_envs, -1)
-        ele_pos = torch.tensor(rod_ele_pos, dtype=torch.float)  # num*72
+        #ele_pos = torch.tensor(rod_ele_pos, dtype=torch.float)  # num*72
 
         rod_ee_pos = np.array(rod_ee_pos).reshape(self._num_envs, -1)
         ee_pos = torch.tensor(rod_ee_pos, dtype=torch.float)  # 2*3
         self.ee_pos = ee_pos
+
+        if self.reduce:
+            ele_pos = ee_pos
+        else:
+            ele_pos = torch.tensor(rod_ele_pos, dtype=torch.float)
 
         self.obs_buf = torch.cat(
             (

@@ -32,11 +32,13 @@ class PullTask( RLTask):
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
 
-        self.reduce = True
+        self.reduce = self.reduce = self._task_cfg["env"]["reduce"]
         #RL params
-        self._num_observations = 66
+
         if self.reduce:
             self._num_observations = 36
+        else:
+            self._num_observations = 66
         self._num_actions = 10
         self.robot_name = 'franka'
 
@@ -186,7 +188,7 @@ class PullTask( RLTask):
         robot_dof_vel = self._robot.get_joint_velocities(clone=False)
         robot_dof_vels = robot_dof_vel.reshape(self._num_envs, -1).to(dtype=torch.float)
 
-        if self.reduce == True:
+        if self.reduce:
             ele_pos = belt_position
         else:
             belt_ele_pos = []
