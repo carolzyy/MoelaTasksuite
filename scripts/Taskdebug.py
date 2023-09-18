@@ -21,7 +21,7 @@ from omniisaacgymenvs.utils.hydra_cfg.reformat import omegaconf_to_dict, print_d
 from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig
 from tasks.BendTask import BendTask
 from tasks.PlaceTask import PlaceTask
-from tasks.PullTask import PullTask
+from tasks.LiftTask import LiftTask
 from tasks.DragTask import DragTask
 from tasks.TransportTask import TransportTask
 

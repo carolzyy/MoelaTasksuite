@@ -17,28 +17,22 @@ Mobile elastic(deformable) manipulation benchmark
 In this benchmark, there are five tasks involving elastic objects and mobile manipulators.
 
 ## Visuals
-Task
-	Place  
-       <!---
-        %![Alt text](https://github.com/carolzyy/MoelaTasksuite.gitPics/Place.gif= 250x250) 
-	-->
-	<img src="Pics/Place.gif" width="250"/>
 
- 
-	Bend  
- <img src="Pics/Bend.gif" width="250"/>
- 
-	Transport  
- <img src="Pics/Transport.gif" width="250"/>
- 
-	Drag  
- <img src="Pics/Place.gif" width="250"/>
- 
-	Lift  
- <img src="Pics/Place.gif" width="250"/>
- 
- 
-	%Q: find suitable belts for it
+PlaceTask  
+	<img src="Pics/Place.gif" width="250"/>  
+
+BendTask  
+    <img src="Pics/Bend.gif" width="250"/>  
+
+TransportTask  
+    <img src="Pics/Transport.gif" width="250"/>  
+
+DragTask  
+    <img src="Pics/Drag.gif" width="250"/>  
+
+LiftTask  
+    <img src="Pics/Lift.gif" width="250"/>
+
 ## Installation
 1. Install OmniIsaacGymEnvs for Isaac Gym(https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs)
 

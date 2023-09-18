@@ -77,14 +77,14 @@ def initialize_task(config, env, init_sim=True):
     from tasks.PlaceTask import PlaceTask
     from tasks.BendTask import BendTask
     from tasks.TransportTask import TransportTask
-    from tasks.PullTask import PullTask
+    from tasks.LiftTask import LiftTask
     from tasks.DragTask import DragTask
 
     # Mappings from strings to environments
     task_map = {
         "Place": PlaceTask,
         "Bend": BendTask,
-        "Pull": PullTask,
+        "Lift": LiftTask,
         "Drag": DragTask,
         "Transport": TransportTask,
     }
