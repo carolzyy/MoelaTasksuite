@@ -2,8 +2,6 @@
 name: Lift
 
 physics_engine: ${..physics_engine}
-#/home/carol/.local/share/ov/pkg/isaac_sim-2022.2.0/python.sh /home/carol/PycharmProjects/mobiledeformbench/scripts/rlgames_train.py
-# if given, will override the device setting in gym. 
 env:
   numEnvs: ${resolve_default:4,${...num_envs}}
   envSpacing: 5.0

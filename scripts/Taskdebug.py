@@ -24,20 +24,7 @@ from tasks.PlaceTask import PlaceTask
 from tasks.LiftTask import LiftTask
 from tasks.DragTask import DragTask
 from tasks.TransportTask import TransportTask
-
-
-def get_world_point(prim,):
-    pose = omni.usd.utils.get_world_transform_matrix(prim)
-    rot = pose.ExtractRotationMatrix()
-    trans = np.array(pose.ExtractTranslation())
-
-    points = np.array(prim.GetAttribute('physxDeformable:simulationPoints').Get())@rot + trans
-    ee = np.array(points[-4:]).mean(axis=0)
-
-
-    return points,ee
-
-
+from Utils.TaskUtils import get_world_point
 
 
 @hydra.main(config_name="config", config_path="../cfg")

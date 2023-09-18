@@ -73,14 +73,11 @@ class RidgeFranka(Robot):
 
         drive_type = ["linear"] * 2 + ["angular"] * 8
         default_dof_pos = [0.0, 0.0]+[math.degrees(x) for x in [0.0,0.0, -1.0, 0.0, -2.2, 0.0, 2.4, 0.8]]
-        #[400] * 2+[400 * np.pi / 180] * 8
         stiffness = [1000] * 2+[400 * np.pi / 180] * 8  #
         damping = [100] * 2+[80 * np.pi / 180] * 8
-        #[50,50,50,87, 87, 87, 87, 12, 12, 12,]
         max_force = [200,200,87,87, 87, 87, 87, 12, 12, 12,]
         if max_velocity == None:
             max_velocity = [0.2, 0.2]+[math.degrees(x)/3 for x in [2.175,2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61]]
-        #max_velocity = [3, 3] + [math.degrees(x)/3 for x in [2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61]]
 
         for i, dof in enumerate(dof_paths):
             set_drive(

@@ -37,13 +37,3 @@ class FrankaView(ArticulationView):
 
     def initialize(self, physics_sim_view):
         super().initialize(physics_sim_view)
-        
-    ''' 
-    def get_deformApis(self,):
-        Api_list=[]
-        prims = self._def.prims
-        for prim in prims:
-            Api_list.append(PhysxSchema.PhysxDeformableBodyAPI(prim))
-
-        return Api_list
-    '''
