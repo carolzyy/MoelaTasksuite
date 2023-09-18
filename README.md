@@ -19,7 +19,7 @@ In this benchmark, there are five tasks involving elastic objects and mobile man
 ## Visuals
 Task
 	Place  
-        ![Alt text](Pics/Place.gif\| height=48px) 
+        ![Alt text](Pics/Place.gif= 250x250) 
 	Bend  
  
 	Transport  
