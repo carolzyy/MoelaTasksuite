@@ -24,7 +24,8 @@ Task
 	Transport
 	Pull
 	Lift
-	Hang on(maybe,assamble)
+	Hang on(maybe,assamble)  
+ 
 	%Q: find suitable belts for it
 ## Installation
 1.Install OmniIsaacGymEnvs for Isaac Gym(https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs)
