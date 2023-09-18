@@ -22,16 +22,20 @@ Task
        <!---
         %![Alt text](https://github.com/carolzyy/MoelaTasksuite.gitPics/Place.gif= 250x250) 
 	-->
-	<img src="Pics/Place.gif" width="128"/>
+	<img src="Pics/Place.gif" width="250"/>
 
  
 	Bend  
+ <img src="Pics/Bend.gif" width="250"/>
  
 	Transport  
+ <img src="Pics/Transport.gif" width="250"/>
  
 	Drag  
+ <img src="Pics/Place.gif" width="250"/>
  
 	Lift  
+ <img src="Pics/Place.gif" width="250"/>
  
  
 	%Q: find suitable belts for it
