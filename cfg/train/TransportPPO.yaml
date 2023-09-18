@@ -54,7 +54,7 @@ params:
     lr_schedule: adaptive
     kl_threshold: 0.008
     score_to_win: 200 #maybe need change
-    max_epochs: ${resolve_default:20000,${....max_iterations}}
+    max_epochs: ${resolve_default:15000,${....max_iterations}}
     save_best_after: 1000
     save_frequency: 2000
     grad_norm: 1.0

@@ -46,15 +46,15 @@ enable_livestream: False
 mt_timeout: 30
 
 wandb_activate: True
-wandb_group: 'mul_reduce'
-wandb_name: ${train.params.config.name}_lap
+wandb_group: 'mul_reduce_ppo'
+wandb_name: ${train.params.config.name}
 wandb_entity:
 wandb_project: 'modebench'
 
 # set default task and default training config based on task
 defaults:
   - task: Transport
-  - train: TransportSAC
+  - train: TransportPPO
   - hydra/job_logging: disabled
 
 # set the directory where the output files get saved

@@ -37,7 +37,7 @@ class LiftTask( RLTask):
         #RL params
 
         self._num_actions = 10
-        if self.reduce == True:
+        if self.reduce:
             self._num_observations = 36
         else:
             self._num_observations = 51
