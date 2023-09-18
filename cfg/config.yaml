@@ -45,7 +45,7 @@ enable_livestream: False
 # timeout for MT script
 mt_timeout: 30
 
-wandb_activate: True
+wandb_activate: False
 wandb_group: 'mul_reduce_ppo'
 wandb_name: ${train.params.config.name}
 wandb_entity:

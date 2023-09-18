@@ -17,20 +17,23 @@ Mobile elastic(deformable) manipulation benchmark
 In this benchmark, there are five tasks involved elastic objects and mobile manipulator.
 
 ## Visuals
-Task table here
 Task
 	Place
 	Bend
 	Transport
-	Pull
+	Drag
 	Lift
-	Hang on(maybe,assamble)  
+	#Hang on(maybe,assamble)  
  
 	%Q: find suitable belts for it
 ## Installation
 1.Install OmniIsaacGymEnvs for Isaac Gym(https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs)
 
-2.Run the existing example
+2.Run the existing example to test  OmniIsaacGymEnvs
+
+3. Clone MoelaSuite 
+
+4. 
 
 ## Usage
 

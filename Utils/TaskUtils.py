@@ -10,7 +10,6 @@ from pxr import UsdGeom, UsdLux, Sdf, Gf, Vt, Usd, UsdPhysics,PhysxSchema,Physic
 root_path=os.getcwd()
 
 def get_robot(robot_name,path,robot_position,max_velocity=None):
-    #robot_name = 'franka'
     if robot_name == 'franka_rod':
         robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/RidgebackFranka/ridgeback_franka_rod.usd')
     elif robot_name == 'franka':
@@ -68,21 +67,8 @@ def get_door(position,prim):
         prim_path=prim,
         name="door",
         translation=position,
-        #scale=[0.1],  # maybe need trible
-    )
-#path =self.default_zero_env_path + "/Rod"
-def get_rod(path, position=Gf.Vec3f(0.95, 0, 0.8)):
-    rod_usd = root_path + '/Asset/Rod.usd'
-    add_reference_to_stage(usd_path=rod_usd, prim_path=self.default_zero_env_path + "/Rod")
-
-    rods = XFormPrim(
-        prim_path=self.default_zero_env_path + "/Rod",
-        name="rod",
-        translation=position,
-        # scale=[0.01],  # maybe need trible
     )
 
-    return
 
 def initialize_task(config, env, init_sim=True):
     from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig
@@ -92,17 +78,15 @@ def initialize_task(config, env, init_sim=True):
     from tasks.BendTask import BendTask
     from tasks.TransportTask import TransportTask
     from tasks.PullTask import PullTask
-    from tasks.LiftTask import LiftTask
-    from omniisaacgymenvs.tasks.cartpole import CartpoleTask
+    from tasks.DragTask import DragTask
 
     # Mappings from strings to environments
     task_map = {
         "Place": PlaceTask,
         "Bend": BendTask,
         "Pull": PullTask,
-        "Lift": LiftTask,
+        "Drag": DragTask,
         "Transport": TransportTask,
-        "Cartpole": CartpoleTask,
     }
 
     cfg = sim_config.config
