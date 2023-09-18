@@ -22,7 +22,7 @@ Task
  <!---
         %![Alt text](https://github.com/carolzyy/MoelaTasksuite.gitPics/Place.gif= 250x250) 
 	-->
-	<img src="https://github.com/carolzyy/MoelaTasksuite.gitPics/Place.gif" width="128"/>
+	<img src="https://github.com/carolzyy/MoelaTasksuite.git/Pics/Place.gif" width="128"/>
 	Bend  
  
 	Transport  
