@@ -12,7 +12,13 @@ env:
   clipActions: 1.0
   controlFrequencyInv: 1 #render times every action
 
-  reduce: True #7.5
+task:
+  reduce: True
+  robot_name: franka_rod #spot_rod
+  robot_position: [0,0,0.0]  #[0,0,0.7]
+  table_position: [1.5, 1.5, 0.]
+  num_action: 10 #19
+  num_obs: 33 #102 for full obs spot: 51
 
 sim:
   dt: 0.0167 # 1/80 s

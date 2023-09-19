@@ -1,6 +1,4 @@
 
-
-from pxr import  Gf, PhysxSchema,UsdGeom
 from omni.isaac.core.prims import RigidPrimView, XFormPrimView,GeometryPrimView,XFormPrim
 from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage
 from omni.isaac.core.utils.torch.transformations import *
@@ -10,16 +8,10 @@ from omniisaacgymenvs.tasks.base.rl_task import RLTask
 import numpy as np
 import torch
 
-
 from Utils.TaskUtils import get_robot,get_table,get_world_point
 from Utils.FrankaView import FrankaView
+from Utils.SpotView import SpotView
 
-#from omni.isaac.debug_draw import _debug_draw
-#draw = _debug_draw.acquire_debug_draw_interface()
-import hydra
-from omniisaacgymenvs.utils.hydra_cfg.hydra_utils import *
-from omniisaacgymenvs.utils.hydra_cfg.reformat import omegaconf_to_dict, print_dict
-from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig
 class PlaceTask( RLTask):
     def __init__(
             self,
@@ -38,22 +30,16 @@ class PlaceTask( RLTask):
         self._dt = self._task_cfg["sim"]["dt"]
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
-        #self.action_scale = self._task_cfg["env"]["actionScale"]
 
-        self.robot_position = Gf.Vec3d(0,0,0.0)
+
+        self.robot_position = self._task_cfg["task"]["robot_position"]
         self.table_height = 0.83
-        self.reduce = self._task_cfg["env"]["reduce"]
+        self.reduce = self._task_cfg["task"]["reduce"]
+        self._num_observations = self._task_cfg["task"]["num_obs"]
 
-        if self.reduce:
-            self._num_observations = 33
-        else:
-            self._num_observations = 102
-
-        self._num_actions = 10   #with the fingers
-
-
-        self.table_position = Gf.Vec3d(1.5, 1.5, 0.0)
-        self.robot_name = 'franka_rod'
+        self._num_actions = self._task_cfg["task"]["num_action"]
+        self.table_position = self._task_cfg["task"]["table_position"]
+        self.robot_name = self._task_cfg["task"]["robot_name"]
 
         RLTask.__init__(self, name, env)
 
@@ -68,10 +54,11 @@ class PlaceTask( RLTask):
         replicate_physics = False
         super().set_up_scene(scene, replicate_physics)
 
-        self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot")
+        if self.robot_name == 'franka_rod':
+            self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot", )
+        elif self.robot_name == 'spot_rod':
+            self._robot = SpotView(prim_paths_expr="/World/envs/.*/Robot", )
         scene.add(self._robot)
-        #scene.add(self._robot._ee)
-        scene.add(self._robot._def)
 
         self._table = XFormPrimView(prim_paths_expr="/World/envs/.*/Table",
                                     name="table_view",
@@ -85,12 +72,16 @@ class PlaceTask( RLTask):
     def post_reset(self) -> None:
         #randomize all envs, maybe train several env one time
         # env data initial
-        name = 'Franka'
-        if name == 'Franka':
+        if self.robot_name == 'franka_rod':
             self.robot_default_dof = torch.tensor(
                 [0.0, 0.0, 0.0,
                  1.157, -1.066, -0.155, -2.239, -1.841, 1.003, 0.469,
-                ], device=self._device
+                 ], device=self._device
+            )
+        elif self.robot_name == 'spot_rod':
+            self.robot_default_dof = torch.tensor(
+                [0.0,
+                 ] * self._robot.num_dof, device=self._device
             )
 
         dof_limits=self._robot.get_dof_limits() #[env_num,dof_num]
