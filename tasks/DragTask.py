@@ -11,7 +11,7 @@ from omni.isaac.core.objects import cuboid, DynamicCuboid, VisualCuboid
 from omniisaacgymenvs.utils.hydra_cfg.hydra_utils import *
 from Utils.TaskUtils import get_robot,get_door,get_world_point
 from Utils.FrankaView import FrankaView
-
+from Utils.SpotView import SpotView
 
 class DragTask( RLTask):
     def __init__(
@@ -31,22 +31,16 @@ class DragTask( RLTask):
         self._dt = self._task_cfg["sim"]["dt"]
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
-        self.robot_name = 'franka_lift'
-        self.reduce = self.reduce = self._task_cfg["env"]["reduce"]
 
-        #RL params
+        self.robot_name =  self._task_cfg["task"]["robot_name"]
+        self.reduce =  self._task_cfg["task"]["reduce"]
 
-        self._num_actions = 10
-        if self.reduce:
-            self._num_observations = 36
-        else:
-            self._num_observations = 51
+        self.robot_position = self._task_cfg["task"]["robot_position"]
+        self.belt_tar = self._task_cfg["task"]["belt_target"]
+        self.robot_tar = self._task_cfg["task"]["robot_target"]
 
-        self.robot_position = Gf.Vec3d(0, 0, 0.0)
-
-        self.belt_tar = np.array([1.5, -0.3, 0.8])
-        self.robot_tar = np.array([0.5, -0.75, 0.1])
-
+        self._num_actions =  self._task_cfg["task"]["num_action"]
+        self._num_observations = self._task_cfg["task"]["num_obs"]
 
         RLTask.__init__(self, name, env)
 
@@ -59,10 +53,11 @@ class DragTask( RLTask):
         self.add_target()
         replicate_physics = False
         super().set_up_scene(scene, replicate_physics)
+        if self.robot_name == 'franka_lift':
+            self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot",)
+        elif self.robot_name == 'spot_lift':
+            self._robot = SpotView(prim_paths_expr="/World/envs/.*/Robot",)
 
-        self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot",
-                                 #name='franka_view'
-                                 )
         scene.add(self._robot)
 
         self._robot_target = XFormPrimView(prim_paths_expr="/World/envs/.*/Belt_Target",
@@ -100,6 +95,12 @@ class DragTask( RLTask):
                  1.157, -1.066, -0.155, -2.239, -1.841, 1.003, 0.469,
                  ], device=self._device
             )
+        elif self.robot_name == 'spot_lift':
+            self.robot_default_dof = torch.tensor(
+                [0.0,
+                 ]*self._robot.num_dof, device=self._device
+            )
+
 
         dof_limits = self._robot.get_dof_limits()
         self.robot_dof_lower_limits = dof_limits[0, :, 0].to(device=self._device)  # dof limitation list,(10,)
@@ -144,9 +145,6 @@ class DragTask( RLTask):
         self.progress_buf[env_ids] = 0
 
 
-
-    # deal with action and also
-    #This method will be called from VecEnvBase before each simulation step
     def pre_physics_step(self, actions)-> None:
         if not self._env._world.is_playing():
             return
@@ -156,8 +154,6 @@ class DragTask( RLTask):
             self.reset_idx(reset_env_ids)
 
         self.actions = actions.clone().to(self._device)
-        # targets = self.robot_dof_targets + self.robot_dof_speed_scales * self._dt * self.actions * self.action_scale#### maybe need to change
-        # targets = self.robot_dof_speed_scales * self.actions
         targets = self.robot_dof_targets + self.robot_dof_speed_scales * self._dt * self.actions
         self.robot_dof_targets[:] = tensor_clamp(targets, self.robot_dof_lower_limits, self.robot_dof_upper_limits)
 
@@ -216,11 +212,12 @@ class DragTask( RLTask):
         robot_target = self.robot_target
         belt_target = self.belt_target
 
-        belt_position, _ = self._robot._def.get_world_poses()
-        belt_dis = torch.sqrt(torch.sum((belt_position - belt_target) ** 2, dim=-1))
 
         robot_position, _ = self._robot._base.get_world_poses()
         robot_dis = torch.sqrt(torch.sum((robot_position - robot_target) ** 2, dim=-1))
+
+        belt_position, _ = self._robot._def.get_world_poses()
+        belt_dis = torch.sqrt(torch.sum((belt_position - belt_target) ** 2, dim=-1))
 
         dis  = robot_dis + belt_dis
         rewards = -dis

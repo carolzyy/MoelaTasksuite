@@ -1,5 +1,4 @@
 import torch
-import os
 from omni.isaac.core.robots.robot import Robot
 from omni.isaac.core.utils.prims import get_prim_at_path
 from typing import Optional
@@ -38,11 +37,6 @@ class RidgeFranka(Robot):
         self._position = torch.tensor([1.0, 0.0, 0.0]) if position is None else position
         self._orientation = torch.tensor([1.0, 0.0, 0.0, 0.0]) if orientation is None else orientation
 
-
-
-        if self._usd_path is None:
-            root_path = os.getcwd()
-            self._usd_path = root_path + '/Asset/ridgeback_franka.usd'
 
         carb.log_warn("asset path is: " + self._usd_path)
         add_reference_to_stage(self._usd_path, prim_path)

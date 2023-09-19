@@ -1,6 +1,6 @@
 from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage
 from Utils.RidgeFranka import RidgeFranka
-from Utils.LegSpot import LegSpot
+from Utils.Spot import Spot
 import os
 import omni
 import math
@@ -20,9 +20,15 @@ def get_robot(robot_name,path,robot_position,max_velocity=None):
         max_velocity = [4000, 4000] + [math.degrees(x)/3 for x in [2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61]]
         robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/RidgebackFranka/ridgeback_franka_rod_long.usd',max_velocity=max_velocity)
     elif robot_name == 'franka_lift':
-        robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/ridgebach_franka_lift.usd')
+        robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/franka_lift.usd')
+    elif robot_name == 'spot_rod':
+        robot = Spot(path , position=robot_position, usd_path=root_path + '/Asset/Spot_rod.usd')
+    elif robot_name == 'spot_lift':
+        robot = Spot(path, position=robot_position, usd_path=root_path + '/Asset/Spot_lift.usd')
+    elif robot_name == 'spot_long':
+        robot = Spot(path, position=robot_position, usd_path=root_path + '/Asset/Spot_rod.usd')
     elif robot_name == 'spot':
-        robot = LegSpot(path , position=robot_position)
+        robot = Spot(path, position=robot_position, usd_path=root_path + '/Asset/Spot.usd')
 
 
 def get_table(table_position,prim):

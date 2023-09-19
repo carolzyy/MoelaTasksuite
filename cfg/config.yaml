@@ -53,7 +53,7 @@ wandb_project: 'modebench'
 
 # set default task and default training config based on task
 defaults:
-  - task: Transport
+  - task: Drag
   - train: TransportPPO
   - hydra/job_logging: disabled
 
