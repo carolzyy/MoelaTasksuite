@@ -1,17 +1,15 @@
-from pxr import  Gf, PhysxSchema,UsdGeom
+
 from omni.isaac.core.prims import RigidPrimView, XFormPrimView,GeometryPrimView,XFormPrim
 from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage
 from omni.isaac.core.utils.torch.transformations import *
 from omni.isaac.core.utils.torch.rotations import *
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
-
 import numpy as np
 import torch
 from omni.isaac.core.objects import cuboid, DynamicCuboid, VisualCuboid
-from omniisaacgymenvs.utils.hydra_cfg.hydra_utils import *
 from Utils.TaskUtils import get_robot,get_door,get_world_point
 from Utils.FrankaView import FrankaView
-from Utils.LegSpot import LegSpot
+from Utils.SpotView import SpotView
 
 class LiftTask( RLTask):
     def __init__(
@@ -32,22 +30,18 @@ class LiftTask( RLTask):
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
 
-        self.reduce = self.reduce = self._task_cfg["env"]["reduce"]
-        #RL params
+        self.reduce = self.reduce = self._task_cfg["task"]["reduce"]
+        self._num_observations = self._task_cfg["task"]["num_obs"]
 
-        if self.reduce:
-            self._num_observations = 36
-        else:
-            self._num_observations = 66
-        self._num_actions = 10
-        self.robot_name = 'franka'
+        self._num_actions = self._task_cfg["task"]["num_action"]
+        self.robot_name = self._task_cfg["task"]["robot_name"]
 
 
-        self.robot_position = Gf.Vec3d(0, 0, 0.0)
+        self.robot_position = self._task_cfg["task"]["robot_position"]
 
-        self.door_position = np.array([0, 0.0, 0.6])
-        self.belt_tar = np.array([0.4, 0, 0.8])
-        self.robot_tar = np.array([2, 0, 0.1])
+        self.door_position = self._task_cfg["task"]["door_position"]
+        self.belt_tar = self._task_cfg["task"]["belt_target"]
+        self.robot_tar = self._task_cfg["task"]["robot_target"]
 
         RLTask.__init__(self, name, env)
 
@@ -62,9 +56,12 @@ class LiftTask( RLTask):
         self.add_target()
         replicate_physics = False
         super().set_up_scene(scene, replicate_physics)
-
-        self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot",
-                                 name='franka_view')
+        if self.robot_name == 'franka':
+            self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot",
+                                     name='franka_view')
+        elif self.robot_name == 'spot':
+            self._robot = SpotView(prim_paths_expr="/World/envs/.*/Robot",
+                                   name='spot_view')
         scene.add(self._robot)
 
         self._robot_target = XFormPrimView(prim_paths_expr="/World/envs/.*/Belt_Target",
@@ -108,6 +105,11 @@ class LiftTask( RLTask):
                 [0.0, 0.0, 0.0,
                  1.157, -1.066, -0.155, -2.239, -1.841, 1.003, 0.469,
                  ], device=self._device
+            )
+        elif self.robot_name == 'spot':
+            self.robot_default_dof = torch.tensor(
+                [0.0,
+                 ] * self._robot.num_dof, device=self._device
             )
 
         dof_limits = self._robot.get_dof_limits()

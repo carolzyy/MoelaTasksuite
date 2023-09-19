@@ -11,7 +11,16 @@ env:
   clipObservations: 5.0
   clipActions: 1.0
   controlFrequencyInv: 1 #render times every action
+
+task:
   reduce: True
+  robot_name: franka #spot_lift
+  robot_position: [0,0,0.0]  #[0,0,0.7]
+  door_position: [0, 0, 0.6]
+  belt_target: [0.4, 0, 0.8]
+  robot_target: [2, 0, 0.1]
+  num_action: 10 #19
+  num_obs: 36 #66 for full obs
 
 
 sim:

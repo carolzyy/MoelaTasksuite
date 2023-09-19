@@ -11,7 +11,16 @@ env:
   clipObservations: 5.0
   clipActions: 1.0
   controlFrequencyInv: 1 #render times every action
+
+task:
   reduce: True
+  robot_name: franka_long #spot_lift
+  robot_position: [1.6,0,0.0]  #[0,0,0.7]
+
+  wall_position: [0.0, 0.0, 0.5]
+  robot_target: [[2.9, -2.1, 0.2]]
+  num_action: 10 #19
+  num_obs: 33
 
 
 sim:

@@ -1,9 +1,5 @@
-
-import omni
-
 from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage,open_stage
 from omni.isaac.core.scenes.scene import Scene
-from pxr import UsdGeom, UsdLux, Sdf, Gf, Vt, Usd, UsdPhysics,PhysxSchema,PhysicsSchemaTools
 from omni.isaac.core.utils.torch.transformations import *
 from omni.isaac.core.utils.torch.rotations import *
 from omni.isaac.core.objects import cuboid, DynamicCuboid, VisualCuboid
@@ -11,13 +7,9 @@ from omni.isaac.core.prims import XFormPrimView,GeometryPrim, XFormPrim,RigidPri
 
 import numpy as np
 import torch
-
-
-
-
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
-from Utils.LegSpot import LegSpot
 from Utils.FrankaView import FrankaView
+from Utils.SpotView import SpotView
 from Utils.TaskUtils import get_robot,get_wall,get_world_point
 
 class BendTask( RLTask):
@@ -37,29 +29,21 @@ class BendTask( RLTask):
         self._num_envs = self._task_cfg["env"]["numEnvs"]
         self._env_spacing = self._task_cfg["env"]["envSpacing"]
         self._dt = self._task_cfg["sim"]["dt"]
-        self.reduce = self._task_cfg["env"]["reduce"]
+
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
-        #self.action_scale = 5
-            #self._task_cfg)["env"]["actionScale"]
+
+        self.robot_name = self._task_cfg["task"]["robot_name"]
+        self.reduce = self._task_cfg["task"]["reduce"]
+
+        self.robot_position = self._task_cfg["task"]["robot_position"]
+        self.wall_position = self._task_cfg["task"]["wall_position"]
 
 
-        if self.reduce:
-            self._num_observations = 36
-        else:
-            self._num_observations = 102
+        self.target_position = self._task_cfg["task"]["robot_target"]
 
-
-        self._num_actions = 10
-
-        self.robot_position = Gf.Vec3d(1.6, 0, 0.0)
-        self.wall_position = Gf.Vec3d(0.0, 0.0, 0.5)
-
-
-        self.target_position = np.array([2.9, -2.1, 0.2])
-        self.corner_position = np.array([2.9, 0, 0.2])
-
-
+        self._num_actions = self._task_cfg["task"]["num_action"]
+        self._num_observations = self._task_cfg["task"]["num_obs"]
 
 
         RLTask.__init__(self, name, env)
@@ -68,7 +52,7 @@ class BendTask( RLTask):
     def set_up_scene(self, scene: Scene) -> None:
 
         self._stage = get_current_stage()
-        get_robot('franka_long', self.default_zero_env_path + "/Robot",
+        get_robot(self.robot_name, self.default_zero_env_path + "/Robot",
                   self.robot_position)  # add reference
         get_wall(wall_position=self.wall_position,
                  prim=self.default_zero_env_path + "/Wall")
@@ -77,8 +61,11 @@ class BendTask( RLTask):
         replicate_physics = False
         super().set_up_scene(scene, replicate_physics)
 
+        if self.robot_name == 'franka_long':
+            self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot", )
+        elif self.robot_name == 'spot_rod':
+            self._robot = SpotView(prim_paths_expr="/World/envs/.*/Robot", )
 
-        self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot")
         scene.add(self._robot)
         
         self._wall = XFormPrimView(prim_paths_expr="/World/envs/.*/Wall",  # need to check
@@ -103,24 +90,22 @@ class BendTask( RLTask):
                                      position=self.target_position,
                                      color=np.array([1., 0, 0]),
                                      size=0.3 )
-        '''
-        cuboid.VisualCuboid(prim_path=self.default_zero_env_path + "/Corner",
-                            position=self.corner_position,
-                            color=np.array([0., 1.0, 0]),
-                            size=0.3)
-        '''
 
 
 
     #In this method, we can implement logic that gets executed once the scene is constructed and simulation starts running.
     def post_reset(self) -> None:
         #randomize all envs, maybe train several env one time
-        name = 'Franka'
-        if name == 'Franka':
+        if self.robot_name == 'franka_long':
             self.robot_default_dof = torch.tensor(
                 [0.0, 0.0, 0.0,
                  1.157, -1.066, -0.155, -2.239, -1.841, 1.003, 0.469,
                  ], device=self._device
+            )
+        elif self.robot_name == 'spot_rod':
+            self.robot_default_dof = torch.tensor(
+                [0.0,
+                 ] * self._robot.num_dof, device=self._device
             )
 
         dof_limits = self._robot.get_dof_limits()  # [env_num,dof_num]

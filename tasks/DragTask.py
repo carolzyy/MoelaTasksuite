@@ -1,4 +1,4 @@
-from pxr import  Gf, PhysxSchema,UsdGeom
+
 from omni.isaac.core.prims import RigidPrimView, XFormPrimView,GeometryPrimView,XFormPrim
 from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage
 from omni.isaac.core.utils.torch.transformations import *
@@ -8,8 +8,7 @@ from omniisaacgymenvs.tasks.base.rl_task import RLTask
 import numpy as np
 import torch
 from omni.isaac.core.objects import cuboid, DynamicCuboid, VisualCuboid
-from omniisaacgymenvs.utils.hydra_cfg.hydra_utils import *
-from Utils.TaskUtils import get_robot,get_door,get_world_point
+from Utils.TaskUtils import get_robot,get_world_point
 from Utils.FrankaView import FrankaView
 from Utils.SpotView import SpotView
 

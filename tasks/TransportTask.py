@@ -3,22 +3,16 @@
 from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage
 
 from omni.isaac.core.scenes.scene import Scene
-from pxr import UsdGeom, UsdLux, Sdf, Gf, Vt, Usd, UsdPhysics,PhysxSchema
 from omni.isaac.core.utils.torch.transformations import *
 from omni.isaac.core.utils.torch.rotations import *
-
 from omni.isaac.core.objects import cuboid
 
 import numpy as np
 import torch
-
-from Utils.RidgeFranka import RidgeFranka
-
-from Utils.LegSpot import LegSpot
 from omni.isaac.core.prims import XFormPrimView,GeometryPrim, XFormPrim,RigidPrimView
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
-from Utils.LegSpot import LegSpot
 from Utils.FrankaView import FrankaView
+from Utils.SpotView import SpotView
 from Utils.TaskUtils import get_robot,get_obstacle,get_world_point
 
 
@@ -37,22 +31,19 @@ class TransportTask( RLTask):
         self._num_envs = self._task_cfg["env"]["numEnvs"]
         self._env_spacing = self._task_cfg["env"]["envSpacing"]
         self._dt = self._task_cfg["sim"]["dt"]
-        self.reduce = self._task_cfg["env"]["reduce"]
+
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
 
-        #RL params
-        if self.reduce:
-            self._num_observations = 33
-        else:
-            self._num_observations = 39
-
-        self._num_actions = 10
+        self.reduce = self._task_cfg["task"]["reduce"]
+        self._num_observations= self._task_cfg["task"]["num_obs"]
+        self.robot_name = self._task_cfg["task"]["robot_name"]
+        self._num_actions= self._task_cfg["task"]["num_action"]
 
 
-        self.robot_position = Gf.Vec3d(0, 0, 0.0)
-        self.target_position = np.array([4.5, 0.0, 0.2])
-        self.obstacle_position = Gf.Vec3d(0, 0.2, 0.0)
+        self.robot_position = self._task_cfg["task"]["robot_position"]
+        self.target_position = self._task_cfg["task"]["target_position"]
+        self.obstacle_position = self._task_cfg["task"]["obstacle_position"]
 
         RLTask.__init__(self, name, env)
 
@@ -60,7 +51,7 @@ class TransportTask( RLTask):
 
     def set_up_scene(self, scene: Scene) -> None:
         self._stage = get_current_stage()
-        get_robot('franka_long', self.default_zero_env_path + "/Robot",
+        get_robot(self.robot_name, self.default_zero_env_path + "/Robot",
                   self.robot_position)  # add reference
         get_obstacle(ob_position=self.obstacle_position,
                  prim=self.default_zero_env_path + "/Wall")
@@ -69,7 +60,10 @@ class TransportTask( RLTask):
         replicate_physics = False
         super().set_up_scene(scene, replicate_physics)
 
-        self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot")
+        if self.robot_name == 'franka_long':
+            self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot", )
+        elif self.robot_name == 'spot_rod':
+            self._robot = SpotView(prim_paths_expr="/World/envs/.*/Robot", )
         scene.add(self._robot)
 
         self._wall = XFormPrimView(prim_paths_expr="/World/envs/.*/Wall",  # need to check
@@ -98,12 +92,16 @@ class TransportTask( RLTask):
     #In this method, we can implement logic that gets executed once the scene is constructed and simulation starts running.
     def post_reset(self) -> None:
         #randomize all envs, maybe train several env one time
-        name = 'Franka'
-        if name == 'Franka':
+        if self.robot_name == 'franka_long':
             self.robot_default_dof = torch.tensor(
                 [0.0, 0.0, 0.0,
                  1.157, -1.066, -0.155, -2.239, -1.841, 1.003, 0.469,
                  ], device=self._device
+            )
+        elif self.robot_name == 'spot_rod':
+            self.robot_default_dof = torch.tensor(
+                [0.0,
+                 ] * self._robot.num_dof, device=self._device
             )
 
         dof_limits = self._robot.get_dof_limits()  # [env_num,dof_num]
