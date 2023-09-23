@@ -52,9 +52,9 @@ class DragTask( RLTask):
         self.add_target()
         replicate_physics = False
         super().set_up_scene(scene, replicate_physics)
-        if self.robot_name == 'franka_lift':
+        if self.robot_name == 'franka_drag':
             self._robot = FrankaView(prim_paths_expr="/World/envs/.*/Robot",)
-        elif self.robot_name == 'spot_lift':
+        elif self.robot_name == 'spot_drag':
             self._robot = SpotView(prim_paths_expr="/World/envs/.*/Robot",)
 
         scene.add(self._robot)
@@ -88,13 +88,13 @@ class DragTask( RLTask):
     #In this method, we can implement logic that gets executed once the scene is constructed and simulation starts running.
     def post_reset(self) -> None:
         #randomize all envs, maybe train several env one time
-        if self.robot_name == 'franka_lift':
+        if self.robot_name == 'franka_drag':
             self.robot_default_dof = torch.tensor(
                 [0.0, 0.0, 0.0,
                  1.157, -1.066, -0.155, -2.239, -1.841, 1.003, 0.469,
                  ], device=self._device
             )
-        elif self.robot_name == 'spot_lift':
+        elif self.robot_name == 'spot_drag':
             self.robot_default_dof = torch.tensor(
                 [0.0,
                  ]*self._robot.num_dof, device=self._device

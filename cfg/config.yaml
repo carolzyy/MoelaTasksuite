@@ -46,10 +46,10 @@ enable_livestream: False
 mt_timeout: 30
 
 wandb_activate: False
-wandb_group: 'mul_reduce_ppo'
+wandb_group: 'Reduced'
 wandb_name: ${train.params.config.name}
 wandb_entity:
-wandb_project: 'modebench'
+wandb_project: 'MoelaSuite0'
 
 # set default task and default training config based on task
 defaults:

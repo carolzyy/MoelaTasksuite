@@ -26,7 +26,7 @@ params:
   load_path: ${...checkpoint} # path to the checkpoint to load
 
   config:
-    name: ${resolve_default:PullSAC,${....experiment}}
+    name: ${resolve_default:LiftSAC,${....experiment}}
     env_name: rlgpu
     device: ${....rl_device}
     device_name: ${....rl_device}
@@ -34,7 +34,7 @@ params:
     normalize_input: True
     reward_shaper:
       scale_value: 0.1 #1.0
-    max_epochs: ${resolve_default:20000,${....max_iterations}}
+    max_epochs: ${resolve_default:30000,${....max_iterations}}
     num_steps_per_episode: 8
     save_best_after: 1000
     save_frequency: 2000

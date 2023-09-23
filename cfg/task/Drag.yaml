@@ -14,12 +14,12 @@ env:
 
 task:
   reduce: True
-  robot_name: franka_lift #spot_lift
-  robot_position: [0,0,0.0]  #[0,0,0.7]
+  robot_name: franka_drag #spot_drag
+  robot_position: [0,0,0.7]  #[0,0,0.7]
   belt_target: [1.5, -0.3, 0.8]
   robot_target: [0.5, -0.75, 0.1]
   num_action: 10 #19
-  num_obs: 36 #36 # 51 for full obs
+  num_obs: 36 #36 54 # 51 for full obs
 
 
 

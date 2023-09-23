@@ -3,7 +3,7 @@ name: Lift
 
 physics_engine: ${..physics_engine}
 env:
-  numEnvs: ${resolve_default:4,${...num_envs}}
+  numEnvs: ${resolve_default:1,${...num_envs}}
   envSpacing: 5.0
   episodeLength: 1500  # suitable params
 
@@ -19,8 +19,8 @@ task:
   door_position: [0, 0, 0.6]
   belt_target: [0.4, 0, 0.8]
   robot_target: [2, 0, 0.1]
-  num_action: 10 #19
-  num_obs: 36 #66 for full obs
+  num_action: 10 #19 for spot
+  num_obs: 36 #66 for full obs, 54 for spot
 
 
 sim:

@@ -15,20 +15,17 @@ def get_robot(robot_name,path,robot_position,max_velocity=None):
     elif robot_name == 'franka':
         robot = RidgeFranka(path, position=robot_position,
                             usd_path=root_path + '/Asset/ridgeback_franka.usd')
-        # self._sim_config.apply_articulation_settings, from omniversegym
     elif robot_name == 'franka_long':
         max_velocity = [4000, 4000] + [math.degrees(x)/3 for x in [2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61]]
         robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/RidgebackFranka/ridgeback_franka_rod_long.usd',max_velocity=max_velocity)
-    elif robot_name == 'franka_lift':
-        robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/franka_lift.usd')
+    elif robot_name == 'franka_drag':
+        robot = RidgeFranka(path, position=robot_position, usd_path=root_path + '/Asset/franka_drag.usd')
     elif robot_name == 'spot_rod':
-        robot = Spot(path , position=robot_position, usd_path=root_path + '/Asset/Spot_rod.usd')
-    elif robot_name == 'spot_lift':
-        robot = Spot(path, position=robot_position, usd_path=root_path + '/Asset/Spot_lift.usd')
-    elif robot_name == 'spot_long':
-        robot = Spot(path, position=robot_position, usd_path=root_path + '/Asset/Spot_rod.usd')
+        robot = Spot(path , position=robot_position, usd_path=root_path + '/Asset/spot_rod.usd')
+    elif robot_name == 'spot_drag':
+        robot = Spot(path, position=robot_position, usd_path=root_path + '/Asset/spot_drag.usd')
     elif robot_name == 'spot':
-        robot = Spot(path, position=robot_position, usd_path=root_path + '/Asset/Spot.usd')
+        robot = Spot(path, position=robot_position, usd_path=root_path + '/Asset/spot.usd')
 
 
 def get_table(table_position,prim):

@@ -3,7 +3,7 @@ name: Transport
 physics_engine: ${..physics_engine}
 
 env:
-  numEnvs: ${resolve_default:4,${...num_envs}}
+  numEnvs: ${resolve_default:1,${...num_envs}}
   envSpacing: 8.0
   episodeLength: 3000  # suitable params
 

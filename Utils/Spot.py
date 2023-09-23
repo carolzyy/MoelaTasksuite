@@ -62,14 +62,14 @@ class Spot(Robot):
             'body/fr_hx',#revolute
             'body/hl_hx',#revolute
             'body/hr_hx',#revolute
-            'base_link/arm0_sh0',#revolute
+            #'base_link/arm0_sh0',#revolute
             'arm0_link_sh0/arm0_sh1',#revolute 1.7
             'arm0_link_sh1/arm0_hr0',#revolute
             "arm0_link_hr0/arm0_el0",#revolute
             "arm0_link_el0/arm0_el1",#revolute 1.7
             "arm0_link_el1/arm0_wr0",#revolute
             "arm0_link_wr0/arm0_wr1",#revolute
-            #"arm0_link_wr1/arm0_f1x",#revolute 0.75
+            "arm0_link_wr1/arm0_f1x",#revolute 0.75
             "front_left_hip/fl_hy",#revolute
             "front_left_upper_leg/fl_kn",#revolute
             "front_right_hip/fr_hy",#revolute

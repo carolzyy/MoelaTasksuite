@@ -3,7 +3,7 @@ name: Bend
 
 physics_engine: ${..physics_engine}
 env:
-  numEnvs: ${resolve_default:4,${...num_envs}}
+  numEnvs: ${resolve_default:1,${...num_envs}}
   envSpacing: 6.0
   episodeLength: 1500  # suitable params
 
@@ -15,12 +15,12 @@ env:
 task:
   reduce: True
   robot_name: franka_long #spot_lift
-  robot_position: [1.6,0,0.0]  #[0,0,0.7]
+  robot_position: [1.6,0,0.]  #[1.7,0,0.7] # 1.6,0,0
 
   wall_position: [0.0, 0.0, 0.5]
   robot_target: [[2.9, -2.1, 0.2]]
   num_action: 10 #19
-  num_obs: 33
+  num_obs: 33  # 51
 
 
 sim:

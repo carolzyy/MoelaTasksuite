@@ -19,10 +19,10 @@ class SpotView(ArticulationView):
             reset_xform_properties=False
         )
 
-        self._ee = XFormPrimView(prim_paths_expr="/World/envs/.*/Robot/base_link", name="base_view", # the position of ee
+        self._base = XFormPrimView(prim_paths_expr="/World/envs/.*/Robot/base_link", name="base_view", # the position of ee
                                     reset_xform_properties=False)
 
-        self._base = GeometryPrimView(prim_paths_expr="/World/envs/.*/Robot/arm0_link_ee", name="arm_ee", # the position of base
+        self._ee = GeometryPrimView(prim_paths_expr="/World/envs/.*/Robot/arm0_link_ee", name="arm_ee", # the position of base
                                      reset_xform_properties=False)
 
 

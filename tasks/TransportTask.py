@@ -1,5 +1,3 @@
-
-
 from omni.isaac.core.utils.stage import add_reference_to_stage,get_current_stage
 
 from omni.isaac.core.scenes.scene import Scene

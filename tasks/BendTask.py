@@ -33,7 +33,7 @@ class BendTask( RLTask):
 
         self._max_episode_length = self._task_cfg["env"]["episodeLength"]
 
-        self.robot_name = self._task_cfg["task"]["robot_name"]
+        self.robot_name = 'spot_rod' #self._task_cfg["task"]["robot_name"]
         self.reduce = self._task_cfg["task"]["reduce"]
 
         self.robot_position = self._task_cfg["task"]["robot_position"]
